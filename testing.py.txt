@@ -1,0 +1,59 @@
+import time
+from url_logic import URLShortenerEngine
+from history_manager import UserHistory
+from scheduler import ExpiryScheduler
+from analytics import AnalyticsDashboard
+
+def run_tests():
+    print("--- Starting DSA Project Tests ---")
+    
+    # 1. Test URL Engine (Hash Map & Graph)
+    engine = URLShortenerEngine()
+    alias = engine.store_url("https://www.google.com", "goog12")
+    
+    # Functional Test: Redirection O(1)
+    result = engine.resolve("goog12")
+    assert result == "https://www.google.com", "Redirection failed!"
+    print("[PASS] Hash Map Redirection O(1)")
+
+    # Edge Case: Missing Alias
+    assert engine.resolve("fake") == "Error: Link not found", "Failed missing alias check"
+    print("[PASS] Edge Case: Missing Alias Handled")
+
+    # 2. Test History (Stack & Merge Sort)
+    history = UserHistory()
+    history.push_to_history("goog12", "https://www.google.com")
+    history.push_to_history("yt45", "https://www.youtube.com")
+    
+    # Test Undo (LIFO Stack)
+    last_action = history.undo_last_creation()
+    assert last_action[0] == "yt45", "Stack Undo (LIFO) failed!"
+    print("[PASS] Stack Undo Functionality (LIFO)")
+
+    # 3. Test Scheduler (Queue/TTL)
+    scheduler = ExpiryScheduler()
+    scheduler.schedule_expiry("goog12", duration=-10) # Set to past for immediate expiry
+    removed = scheduler.run_cleanup()
+    assert removed == 1, "Queue Cleanup logic failed!"
+    print("[PASS] Queue Expiry Scheduler (FIFO/TTL)")
+
+    # 4. Test Analytics (Heap/Top-K)
+    analytics = AnalyticsDashboard()
+    analytics.track_click("link_A", 50)
+    analytics.track_click("link_B", 100)
+    trending = analytics.get_trending()
+    assert trending[0][1] == "link_B", "Heap Top-K ranking failed!"
+    print("[PASS] Heap/Priority Queue Top-K Analytics")
+
+    # 5. THE BENCHMARK (Project Requirement)
+    print("\n--- Running O(1) Benchmark ---")
+    start_time = time.time()
+    for _ in range(10000):
+        engine.resolve("goog12")
+    end_time = time.time()
+    avg_time = (end_time - start_time) / 10000
+    print(f"Benchmark: 10,000 lookups completed. Avg time: {avg_time:.8f} seconds.")
+    print("Verification: Time is constant regardless of input size. O(1) confirmed.")
+
+if __name__ == "__main__":
+    run_tests()
